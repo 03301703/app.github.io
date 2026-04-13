@@ -1,0 +1,18 @@
+{
+  "name": "Flores El Trigal - Bajas",
+  "short_name": "Bajas Trigal",
+  "description": "Gestión de bajas y pérdidas en campo",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a3c61",
+  "theme_color": "#1a3c61",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3233/3233483.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

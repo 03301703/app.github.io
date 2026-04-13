@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Flores El Trigal - Bajas</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Excel Library (SheetJS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <header>
+        <h2>Control de <span>Bajas</span></h2>
+        <p>Flores El Trigal - Gestión de Campo</p>
+        <img class="header-logo" src="https://raw.githubusercontent.com/SheetJS/sheetjs.github.io/master/assets/img/logo.png" alt="Logo">
+    </header>
+
+    <div class="container">
+        
+        <!-- STEP 1: LOAD INVENTORY -->
+        <section class="card animate-in">
+            <h3>1. Cargar Inventario</h3>
+            <div class="field">
+                <label>Archivo de Siembra (.xlsx)</label>
+                <input type="file" id="fileInput" accept=".xlsx, .xls">
+            </div>
+            <button class="btn btn-primary" onclick="window.app.procesarExcel()">
+                <span>📂</span> Cargar Datos
+            </button>
+            <div id="statusCarga" class="status">
+                <span>✅</span> <span id="textoStatus">Inventario listo</span>
+            </div>
+        </section>
+
+        <!-- STEP 2: LOCATION -->
+        <section class="card animate-in" style="animation-delay: 0.1s;">
+            <h3>2. Ubicación de Bloque</h3>
+            <div class="info-row">
+                <div class="field">
+                    <label>Bloque</label>
+                    <select id="selBloque" disabled onchange="window.app.cargarCamas()">
+                        <option value="">Esperando...</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Cama (cm)</label>
+                    <select id="selCama" disabled onchange="window.app.autocompletarTodo()">
+                        <option value="">--</option>
+                    </select>
+                </div>
+            </div>
+            <div id="infoVariedad" class="variety-info" style="display:none;">
+                Variedad: <b id="v_nombre">-</b> <br>
+                Camas Originales: <b id="v_plantas">0</b>
+            </div>
+        </section>
+
+        <!-- STEP 3: LOSS DETAIL -->
+        <section class="card animate-in" style="animation-delay: 0.2s;">
+            <h3>3. Detalle de Pérdidas</h3>
+            
+            <label>Tipo de Producto</label>
+            <div class="segmented" id="prodTypeControl">
+                <input type="radio" name="prodType" id="typeSN" value="SN" checked>
+                <label for="typeSN">SN</label>
+                <input type="radio" name="prodType" id="typePO" value="PO">
+                <label for="typePO">PO</label>
+                <input type="radio" name="prodType" id="typeMP" value="MP">
+                <label for="typeMP">MP</label>
+                <input type="radio" name="prodType" id="typeSL" value="SL">
+                <label for="typeSL">SL</label>
+                <input type="radio" name="prodType" id="typeTR" value="TR">
+                <label for="typeTR">TR</label>
+            </div>
+
+            <div class="info-row" style="margin-top: 20px;">
+                <div class="field" style="flex: 2;">
+                    <label>Causa</label>
+                    <select id="causaInput" onchange="window.app.verificarOtraCausa()">
+                        <option value="">-- Seleccionar --</option>
+                        <option value="Botrytis">Botrytis</option>
+                        <option value="Espiga corta">Espiga corta</option>
+                        <option value="Vegetativo">Vegetativo</option>
+                        <option value="Daño mecánico">Daño mecánico</option>
+                        <option value="Torcido">Torcido</option>
+                        <option value="Delgado">Delgado</option>
+                        <option value="Malformación">Malformación</option>
+                        <option value="Tallos Cortos">Tallos Cortos</option>
+                        <option value="Mezcla">Mezcla</option>
+                        <option value="Mutación">Mutación</option>
+                        <option value="Flor abierta">Flor abierta</option>
+                        <option value="Flor cerrada">Flor cerrada</option>
+                        <option value="OTRA">⚠️ Otra causa</option>
+                    </select>
+                </div>
+                <div class="field" style="flex: 1;">
+                    <label>Cantidad</label>
+                    <input type="number" id="cantidadInput" placeholder="0" inputmode="numeric">
+                </div>
+            </div>
+
+            <div id="otraCausaDiv" style="display:none; margin-bottom: 15px;">
+                <label>Nombre de la nueva causa</label>
+                <input type="text" id="nuevaCausaNombre" placeholder="Escriba aquí...">
+            </div>
+
+            <button class="btn btn-outline" onclick="window.app.agregarCausa()">
+                ➕ Añadir Causa
+            </button>
+
+            <div class="summary-box">
+                <p>Total Acumulado</p>
+                <div class="total"><span id="sumaTallos">0</span> <small>tallos</small></div>
+                <p style="color: var(--text-secondary); margin-top: 5px;">Pérdida: <b id="porcTotal">0.00%</b></p>
+            </div>
+
+            <button class="btn btn-primary" onclick="window.app.guardarFila()">
+                💾 Guardar Cama Completa
+            </button>
+        </section>
+
+        <!-- HISTORY -->
+        <section class="table-container animate-in" style="animation-delay: 0.3s;">
+            <div style="padding: 20px 20px 10px;">
+                <h3>Historial del Día</h3>
+            </div>
+            <table id="tablaVisual">
+                <thead>
+                    <tr>
+                        <th>Prod</th>
+                        <th>Blq/Cama</th>
+                        <th>Variedad</th>
+                        <th>Bajas</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoTabla"></tbody>
+            </table>
+            <div style="background: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; font-weight: 700;">
+                <span>TOTAL JORNADA:</span>
+                <span id="totalGralTallos">0</span>
+            </div>
+        </section>
+
+        <!-- EXPORT / CLEAR -->
+        <div style="margin-top: 10px;">
+            <button class="btn btn-accent" onclick="window.app.exportar()">
+                📥 Descargar Reporte Excel
+            </button>
+            <button class="btn" style="color: var(--danger); font-size: 0.8rem; margin-top: 10px;" onclick="window.app.limpiarCache()">
+                🗑️ Borrar Datos del Día
+            </button>
+        </div>
+
+    </div>
+
+    <!-- UI Overlay for loading -->
+    <div id="loader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:999; align-items:center; justify-content:center;">
+        <div style="text-align:center;">
+            <div style="width:40px; height:40px; border:4px solid #f3f3f3; border-top:4px solid var(--primary); border-radius:50%; animation: spin 1s linear infinite; margin:auto;"></div>
+            <p style="margin-top:10px; font-weight:600;">Procesando...</p>
+        </div>
+    </div>
+
+    <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+
+    <script src="app.js"></script>
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Error:', err));
+            });
+        }
+    </script>
+</body>
+</html>
